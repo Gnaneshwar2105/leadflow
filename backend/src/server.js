@@ -15,6 +15,23 @@ app.use(express.json());
  
 app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'leadflow-api' }));
  
+// TEMPORARY DEBUG ENDPOINT - remove before final submission.
+// Shows connection state and a masked version of the configured URI
+// (password replaced with ***) so we can verify config without ever
+// exposing the real secret.
+app.get('/api/debug', (req, res) => {
+  const mongoose = require('mongoose');
+  const raw = process.env.MONGO_URI || '(not set)';
+  const masked = raw.replace(/:\/\/([^:]+):([^@]+)@/, '://$1:***@');
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  res.json({
+    mongoUriConfigured: !!process.env.MONGO_URI,
+    maskedUri: masked,
+    connectionState: states[mongoose.connection.readyState] || 'unknown',
+    jwtSecretConfigured: !!process.env.JWT_SECRET,
+  });
+});
+ 
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/public', publicRoutes);
